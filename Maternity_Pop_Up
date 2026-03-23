@@ -1,46 +1,31 @@
-<!-- TWO WILD SOULS — MATERNITY POPUP v3
-     Changes from v2:
-     - Mobile devices (≤ 1024px touch screens) use native <input type="date">
-       which opens the phone's built-in calendar/date picker
-     - Desktop keeps the custom inline calendar (unchanged)
-     - isMobile() helper detects touch-capable narrow viewports
-     - Hidden <input id="twsNativeDateInput"> sits behind the button on mobile
-     - twsToggleCal() routes to native or custom calendar based on device
-     - twsConfirmCal() / native 'change' handler share the same date-commit logic
+<!-- TWO WILD SOULS — MATERNITY POPUP v6
+     Changes from v5:
+     - Removed 4-step preview list
+     - Condensed card to single self-contained panel
+     - Verbiage now matches quiz redirect page exactly
+     - Feature pills: Pro Hair + Makeup · Designer Gowns · In-Studio & Outdoors · Fully Guided
+     - Social proof: 5.0 · 67 Google reviews
+     - CTA: "Get My Recommendation"
+     - Subtitle: "Takes 20 seconds · No personal information required"
+     - All tracking logic (fbclid/gclid, suppress, ribbon) unchanged
+
+     TEST_MODE = true  → fires instantly, skips suppression
+     TEST_MODE = false → 2 min delay, 7-day suppress (GO LIVE)
+
+     MANUAL TRIGGER:
+     - Set any Showit button URL to: javascript:twsOpen()
 -->
 <script>
-/* ============================================================
-   TWO WILD SOULS — MATERNITY POPUP v3
-   Paste into: Showit → Settings → Custom Code → HTML End of Page
-
-   CHANGES FROM v2:
-   - Mobile: uses phone's native date picker (input type="date")
-   - Desktop: keeps the custom inline calendar (unchanged)
-
-   LOGIC:
-   - Same URL flagging / 2-min timer / 7-day suppress as v1 & v2
-   - Quiz updated to match 5-step flow with package logic
-   - Outputs: week, status, window, bookby, type, style,
-     setting, package, duedate — plus fbclid/gclid passthrough
-   - Late moms (≥33 wks) redirect to NEWBORN page
-   - Early moms redirect to MATERNITY ads-custom page
-
-   MANUAL TRIGGER:
-   - Set any Showit button URL to: javascript:twsOpen()
-   - Bypasses ALL criteria (timer, suppress, etc.)
-
-   TEST_MODE = true  → fires instantly, skips suppression
-   TEST_MODE = false → 2 min delay, 7-day suppress (GO LIVE)
-   ============================================================ */
 (function(){
 
-var TEST_MODE   = true;
+var TEST_MODE   = false;
 var FLAG_KEY    = 'tws_maternity_flag';
 var TIMER_KEY   = 'tws_maternity_timer_start';
 var DISMISS_KEY = 'tws_popup_dismissed';
 var DELAY_MS    = TEST_MODE ? 0 : 120000;
 var SUPPRESS_MS = 7 * 24 * 60 * 60 * 1000;
 var RIBBON_KEY  = 'tws_ribbon_active';
+var QUIZ_URL    = 'https://moments.twowildsoulsphotography.com/';
 var EXCLUDED    = [
   'detroit-maternity-photographer-ads',
   'personalized-maternity-results',
@@ -49,14 +34,9 @@ var EXCLUDED    = [
   'contact-two-wild-souls-photography'
 ];
 
-/* ── Mobile detection ── */
-function isMobile(){
-  return (('ontouchstart' in window) || (navigator.maxTouchPoints > 0)) && window.innerWidth <= 1024;
-}
-
 /* ── Page checks ── */
 function isQualifyingMaternityPage(){
-  var u = window.location.href.toLowerCase();
+  var u    = window.location.href.toLowerCase();
   var path = window.location.pathname.toLowerCase().replace(/\/$/, '');
   for(var i = 0; i < EXCLUDED.length; i++){
     if(u.indexOf('/' + EXCLUDED[i]) !== -1) return false;
@@ -101,11 +81,16 @@ function isQualifyingMaternityPage(){
   return false;
 }
 
+function isExcludedPage(){
+  var u=window.location.href.toLowerCase();
+  for(var i=0;i<EXCLUDED.length;i++){ if(u.indexOf('/'+EXCLUDED[i])!==-1) return true; }
+  return false;
+}
 function isDismissed(){
   if(TEST_MODE) return false;
-  try{ var v = localStorage.getItem(DISMISS_KEY); return !!(v && (Date.now()-parseInt(v)) < SUPPRESS_MS); }catch(e){ return false; }
+  try{ var v=localStorage.getItem(DISMISS_KEY); return !!(v&&(Date.now()-parseInt(v))<SUPPRESS_MS); }catch(e){ return false; }
 }
-function setDismissed(){ try{ localStorage.setItem(DISMISS_KEY, Date.now().toString()); }catch(e){} }
+function setDismissed(){ try{ localStorage.setItem(DISMISS_KEY,Date.now().toString()); }catch(e){} }
 function setFlag(){ try{ localStorage.setItem(FLAG_KEY,'1'); }catch(e){} }
 function isFlagged(){ try{ return localStorage.getItem(FLAG_KEY)==='1'; }catch(e){ return false; } }
 function getTimerStart(){ try{ var v=localStorage.getItem(TIMER_KEY); return v?parseInt(v):null; }catch(e){ return null; } }
@@ -116,142 +101,92 @@ function clearRibbonActive(){ try{ sessionStorage.removeItem(RIBBON_KEY); }catch
 function isRibbonActive(){ try{ return sessionStorage.getItem(RIBBON_KEY)==='1'; }catch(e){ return false; } }
 function timeElapsed(){ var s=getTimerStart(); return s?Date.now()-s:0; }
 
-/* ── State ── */
-var ST = { due:null, dueStr:'', firstBaby:null, multiples:null, style:null, whoJoins:null, highRisk:false };
-var NOW = new Date(); NOW.setHours(0,0,0,0);
-var MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-var calY, calM, calTemp = null;
-
-/* ── Packages ── */
-var PACKAGES = {
-  portraits: {
-    name:'Portraits of Just Mom', tagline:'Intimate · Studio Only · All About You', emoji:'🤍'
-  },
-  whiteGlove: {
-    name:'White Glove Experience', tagline:'Full Family · Studio & Outdoors · The Full Story', emoji:'✨'
-  }
-};
-
 /* ── Styles ── */
 function injectStyles(){
-  if(document.getElementById('twsPopStyles2')) return;
-  var s = document.createElement('style'); s.id = 'twsPopStyles2';
-  s.textContent = [
+  if(document.getElementById('twsPopStyles6')) return;
+  var s=document.createElement('style'); s.id='twsPopStyles6';
+  s.textContent=[
     '@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap");',
 
     /* Overlay */
-    '#twsPop{display:none;position:fixed;inset:0;background:rgba(30,31,28,0.65);z-index:99999;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);}',
+    '#twsPop{display:none;position:fixed;inset:0;background:rgba(30,31,28,0.72);z-index:99999;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}',
     '#twsPop.open{display:flex;animation:twsOvIn 0.28s ease both;}',
     '@keyframes twsOvIn{from{opacity:0}to{opacity:1}}',
 
     /* Card */
-    '#twsCard{position:relative;width:100%;max-width:460px;max-height:92vh;overflow-y:auto;border-radius:8px;background:#FAFAF8;box-shadow:0 20px 60px rgba(30,31,28,0.35);animation:twsCardIn 0.32s cubic-bezier(0.34,1.1,0.64,1) both;}',
-    '@keyframes twsCardIn{from{opacity:0;transform:translateY(22px) scale(0.96)}to{opacity:1;transform:none}}',
-    '#twsCard::-webkit-scrollbar{width:3px}#twsCard::-webkit-scrollbar-track{background:transparent}#twsCard::-webkit-scrollbar-thumb{background:#ccc;border-radius:2px}',
+    '#twsCard{',
+      'position:relative;width:100%;max-width:420px;',
+      'border-radius:12px;overflow:hidden;',
+      'background:linear-gradient(160deg,#3F4438 0%,#4d5540 55%,#3a4035 100%);',
+      'box-shadow:0 28px 80px rgba(20,22,18,0.55);',
+      'animation:twsCardIn 0.34s cubic-bezier(0.34,1.1,0.64,1) both;',
+    '}',
+    '@keyframes twsCardIn{from{opacity:0;transform:translateY(24px) scale(0.95)}to{opacity:1;transform:none}}',
+
+    /* Texture overlay on card */
+    '#twsCard::before{content:"";position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.025\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");pointer-events:none;z-index:0;}',
 
     /* Close */
-    '#twsClose{position:absolute;top:12px;right:12px;z-index:10;background:rgba(255,255,255,0.9);border:1px solid #E5E2DC;border-radius:50%;width:28px;height:28px;font-size:13px;color:#6B6E6A;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;font-family:sans-serif;box-shadow:0 1px 4px rgba(0,0,0,0.08);}',
-    '#twsClose:hover{background:#fff;color:#2E2F2C;transform:scale(1.05);}',
+    '#twsClose{position:absolute;top:13px;right:13px;z-index:10;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.18);border-radius:50%;width:28px;height:28px;font-size:12px;color:rgba(255,255,255,0.65);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;font-family:sans-serif;}',
+    '#twsClose:hover{background:rgba(255,255,255,0.2);color:#fff;}',
 
-    /* Header band */
-    '#twsHead{padding:28px 28px 20px;border-bottom:1px solid #EDEAE5;background:linear-gradient(160deg,#3F4438 0%,#5a6147 100%);border-radius:8px 8px 0 0;text-align:center;}',
-    '#twsHead .tws-eyebrow{font-family:"DM Sans",sans-serif;font-size:9px;font-weight:500;letter-spacing:0.22em;text-transform:uppercase;color:rgba(255,255,255,0.55);margin-bottom:10px;}',
-    '#twsHead .tws-title{font-family:"Cormorant Garamond",serif;font-size:26px;font-weight:300;line-height:1.2;color:#fff;margin-bottom:6px;}',
-    '#twsHead .tws-title em{font-style:italic;color:#C7B27A;}',
-    '#twsHead .tws-sub{font-size:12px;font-weight:300;color:rgba(255,255,255,0.65);line-height:1.5;}',
+    /* Inner content */
+    '#twsInner{position:relative;z-index:1;padding:36px 30px 28px;}',
 
-    /* Progress */
-    '#twsProgBar{height:2px;background:rgba(255,255,255,0.15);overflow:hidden;}',
-    '#twsProgFill{height:100%;width:0%;background:linear-gradient(90deg,#7C8A5A,#C7B27A);transition:width 0.45s ease;}',
+    /* Eyebrow */
+    '.tws-eyebrow{display:flex;align-items:center;gap:10px;margin-bottom:18px;}',
+    '.tws-eyebrow-line{flex:1;height:1px;background:rgba(199,178,122,0.3);}',
+    '.tws-eyebrow span{font-family:"DM Sans",sans-serif;font-size:9px;font-weight:500;letter-spacing:0.22em;text-transform:uppercase;color:rgba(199,178,122,0.75);white-space:nowrap;}',
 
-    /* Body */
-    '#twsBody{padding:22px 24px 24px;}',
+    /* Spots badge */
+    '.tws-spots{display:inline-flex;align-items:center;gap:6px;background:rgba(199,178,122,0.14);border:1px solid rgba(199,178,122,0.28);border-radius:20px;padding:4px 12px;margin-bottom:14px;}',
+    '.tws-spots-dot{width:6px;height:6px;border-radius:50%;background:#C7B27A;animation:twsPulse 2s ease-in-out infinite;}',
+    '@keyframes twsPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.8)}}',
+    '.tws-spots span{font-family:"DM Sans",sans-serif;font-size:9.5px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:rgba(199,178,122,0.85);}',
 
-    /* Dots */
-    '#twsDots{display:flex;gap:6px;justify-content:center;margin-bottom:18px;}',
-    '.tws-dot{width:6px;height:6px;border-radius:50%;background:#E0DDD8;transition:all 0.25s;}',
-    '.tws-dot.on{background:#7C8A5A;transform:scale(1.45);}',
-    '.tws-dot.done{background:#C7B27A;transform:scale(1.1);}',
+    /* Headline */
+    '#twsInner h2{font-family:"Cormorant Garamond",serif;font-size:30px;font-weight:300;line-height:1.15;color:#fff;margin-bottom:6px;}',
+    '#twsInner h2 em{font-style:italic;color:#C7B27A;}',
 
-    /* Steps */
-    '.tws-step{display:none;}',
-    '.tws-step.active{display:block;animation:twsStepIn 0.28s ease both;}',
-    '@keyframes twsStepIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}',
+    /* Subhead */
+    '.tws-consult-label{font-family:"DM Sans",sans-serif;font-size:11px;font-weight:500;letter-spacing:0.18em;text-transform:uppercase;color:rgba(199,178,122,0.7);margin-bottom:16px;}',
 
-    /* Question */
-    '.tws-q{font-family:"Cormorant Garamond",serif;font-size:22px;font-weight:400;color:#2E2F2C;line-height:1.3;margin-bottom:5px;text-align:center;}',
-    '.tws-hint{font-size:12px;color:#6B6E6A;font-style:italic;text-align:center;margin-bottom:16px;line-height:1.5;}',
+    /* Body copy */
+    '.tws-body{font-family:"DM Sans",sans-serif;font-size:12.5px;font-weight:300;color:rgba(255,255,255,0.65);line-height:1.65;margin-bottom:22px;}',
+    '.tws-body strong{color:rgba(255,255,255,0.88);font-weight:400;}',
 
-    /* Date picker button */
-    '.tws-dpbtn{width:100%;padding:13px 18px;border:1.5px solid #DDD9D3;border-radius:6px;background:#fff;font-family:"DM Sans",sans-serif;font-size:13.5px;color:#6B6E6A;cursor:pointer;text-align:center;transition:all 0.2s;margin-bottom:4px;}',
-    '.tws-dpbtn.picked{color:#2E2F2C;}',
-    '.tws-dpbtn:hover,.tws-dpbtn:focus{border-color:#7C8A5A;box-shadow:0 0 0 3px rgba(124,138,90,0.1);outline:none;}',
+    /* Divider */
+    '.tws-divider{height:1px;background:rgba(255,255,255,0.09);margin-bottom:20px;}',
 
-    /* ── Native date input (mobile) ── *
-       Hidden visually but accessible; positioned over the button
-       so the tap hits the input and fires the native picker.      */
-    '#twsNativeDateInput{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;border:none;}',
+    /* Feature pills */
+    '.tws-pills{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:24px;}',
+    '.tws-pill{font-family:"DM Sans",sans-serif;font-size:9.5px;font-weight:400;letter-spacing:0.06em;color:rgba(255,255,255,0.6);background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:5px 11px;}',
 
-    /* Warning box (too late) */
-    '#twsWarnBox{display:none;margin-top:12px;background:#fef5f3;border:1.5px solid #e5a898;border-radius:6px;padding:13px 15px;}',
-    '#twsWarnBox.show{display:block;}',
-    '#twsWarnBox .twsWB-t{font-family:"Cormorant Garamond",serif;font-size:15px;color:#8b3a27;margin-bottom:4px;}',
-    '#twsWarnBox .twsWB-b{font-size:11px;color:#a0533d;line-height:1.55;}',
-    '#twsWarnBox .twsWB-b a{color:#8b3a27;font-weight:500;text-decoration:underline;}',
+    /* CTA button */
+    '#twsStartBtn{',
+      'width:100%;padding:16px 24px;',
+      'background:linear-gradient(90deg,#C7B27A,#b09a68);',
+      'border:none;border-radius:8px;',
+      'font-family:"DM Sans",sans-serif;font-size:10.5px;font-weight:500;',
+      'letter-spacing:0.24em;text-transform:uppercase;color:#2E2F2C;',
+      'cursor:pointer;transition:all 0.22s;',
+      'box-shadow:0 4px 20px rgba(199,178,122,0.28);',
+      'display:flex;align-items:center;justify-content:center;gap:10px;',
+      'margin-bottom:10px;',
+    '}',
+    '#twsStartBtn:hover{background:linear-gradient(90deg,#d4c08a,#C7B27A);transform:translateY(-1px);box-shadow:0 8px 28px rgba(199,178,122,0.4);}',
+    '#twsStartBtn .btn-arrow{font-size:15px;transition:transform 0.2s;}',
+    '#twsStartBtn:hover .btn-arrow{transform:translateX(3px);}',
 
-    /* Options */
-    '.tws-opts{display:flex;flex-direction:column;gap:9px;margin-bottom:4px;}',
-    '.tws-opt{padding:13px 15px;border:1.5px solid #DDD9D3;border-radius:6px;cursor:pointer;transition:all 0.18s;background:#fff;text-align:center;user-select:none;}',
-    '.tws-opt:hover{border-color:#7C8A5A;background:rgba(124,138,90,0.04);}',
-    '.tws-opt.sel{border-color:#7C8A5A;background:rgba(124,138,90,0.07);box-shadow:0 0 0 2px rgba(124,138,90,0.12);}',
-    '.tws-opt .ot{font-size:14px;font-weight:500;color:#2E2F2C;margin-bottom:2px;}',
-    '.tws-opt .od{font-size:11.5px;color:#6B6E6A;font-weight:300;}',
+    /* Micro copy */
+    '.tws-micro{text-align:center;font-family:"DM Sans",sans-serif;font-size:10px;font-weight:300;color:rgba(255,255,255,0.38);letter-spacing:0.04em;margin-bottom:18px;}',
 
-    /* Nav buttons */
-    '.tws-nav{display:flex;gap:9px;margin-top:18px;}',
-    '.tws-back{flex:0 0 auto;background:transparent;border:1.5px solid #DDD9D3;border-radius:6px;padding:10px 16px;font-family:"DM Sans",sans-serif;font-size:10px;font-weight:500;letter-spacing:0.15em;text-transform:uppercase;color:#6B6E6A;cursor:pointer;transition:all 0.18s;}',
-    '.tws-back:hover{border-color:#6B6E6A;color:#2E2F2C;}',
-    '.tws-nxt{flex:1;background:linear-gradient(90deg,#3F4438,#5a6147);border:none;border-radius:6px;padding:12px 20px;font-family:"DM Sans",sans-serif;font-size:10px;font-weight:500;letter-spacing:0.2em;text-transform:uppercase;color:#fff;cursor:pointer;transition:all 0.2s;box-shadow:0 3px 12px rgba(63,68,56,0.2);}',
-    '.tws-nxt:hover{background:linear-gradient(90deg,#7C8A5A,#C7B27A);transform:translateY(-1px);box-shadow:0 5px 16px rgba(124,138,90,0.25);}',
-
-    /* Error */
-    '.tws-err{font-size:11.5px;color:#bf5040;text-align:center;margin-top:7px;display:none;}',
-    '.tws-err.show{display:block;}',
-
-    /* Loading */
-    '#twsLoad{display:none;text-align:center;padding:32px 24px 36px;}',
-    '#twsLoad.active{display:block;}',
-    '.tws-spinner{width:32px;height:32px;border:2.5px solid rgba(124,138,90,0.2);border-top-color:#7C8A5A;border-radius:50%;animation:twsSpin 0.75s linear infinite;margin:0 auto 16px;}',
-    '@keyframes twsSpin{to{transform:rotate(360deg)}}',
-    '.tws-load-pkg{font-family:"Cormorant Garamond",serif;font-size:20px;font-style:italic;color:#3F4438;margin-bottom:5px;}',
-    '.tws-load-tag{font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:#7C8A5A;margin-bottom:10px;}',
-    '.tws-load-sub{font-size:12px;color:#6B6E6A;font-weight:300;}',
-
-    /* Footer */
-    '#twsFoot{padding:10px 24px 12px;border-top:1px solid #EDEAE5;text-align:center;}',
-    '#twsFoot p{font-size:9.5px;color:#9B9E99;letter-spacing:0.05em;}',
-
-    /* Calendar overlay */
-    '#twsCal{display:none;position:fixed;inset:0;z-index:100001;align-items:center;justify-content:center;padding:16px;}',
-    '#twsCal.open{display:flex;}',
-    '#twsCalBox{width:340px;max-width:calc(100vw - 32px);background:#fff;border-radius:10px;box-shadow:0 16px 48px rgba(30,31,28,0.28);overflow:hidden;animation:twsCardIn 0.22s ease both;}',
-    '.twsCal-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:#3F4438;color:#fff;}',
-    '.twsCal-head span{font-family:"Cormorant Garamond",serif;font-size:17px;font-weight:400;}',
-    '.twsCal-head button{background:none;border:none;color:#fff;font-size:22px;cursor:pointer;padding:0 5px;line-height:1;opacity:0.8;transition:opacity 0.15s;}',
-    '.twsCal-head button:hover{opacity:1;}',
-    '.twsCal-wdays{display:grid;grid-template-columns:repeat(7,1fr);padding:10px 10px 4px;font-size:10px;font-weight:500;letter-spacing:0.04em;text-transform:uppercase;color:#6B6E6A;text-align:center;}',
-    '.twsCal-grid{display:grid;grid-template-columns:repeat(7,1fr);padding:4px 10px 10px;gap:3px;min-height:176px;align-content:start;}',
-    '.twsCal-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:12.5px;border-radius:50%;border:none;background:none;font-family:"DM Sans",sans-serif;color:#2E2F2C;cursor:pointer;transition:all 0.12s;min-width:0;}',
-    '.twsCal-day:hover:not(.dis):not(.emp){background:rgba(124,138,90,0.12);}',
-    '.twsCal-day.sel{background:#7C8A5A;color:#fff;font-weight:500;}',
-    '.twsCal-day.dis{color:#D0CCC7;cursor:not-allowed;}',
-    '.twsCal-day.emp{pointer-events:none;}',
-    '.twsCal-foot{display:flex;gap:8px;justify-content:flex-end;padding:10px 14px;border-top:1px solid #EDEAE5;}',
-    '.twsCal-foot button{padding:8px 18px;border-radius:5px;font-family:"DM Sans",sans-serif;font-size:10px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:all 0.15s;}',
-    '.twsCal-cancel{background:none;border:1.5px solid #DDD9D3;color:#6B6E6A;}',
-    '.twsCal-cancel:hover{border-color:#6B6E6A;color:#2E2F2C;}',
-    '.twsCal-done{background:linear-gradient(90deg,#7C8A5A,#C7B27A);color:#fff;border:none;box-shadow:0 2px 8px rgba(124,138,90,0.22);}',
-    '.twsCal-done:hover{transform:translateY(-1px);}',
+    /* Social proof */
+    '.tws-social{display:flex;align-items:center;justify-content:center;gap:8px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.08);}',
+    '.tws-stars{display:flex;gap:2px;}',
+    '.tws-stars span{font-size:10px;color:#C7B27A;}',
+    '.tws-social-text{font-family:"DM Sans",sans-serif;font-size:10px;color:rgba(255,255,255,0.45);letter-spacing:0.04em;}',
+    '.tws-social-text strong{color:rgba(255,255,255,0.65);font-weight:500;}',
 
     /* Ribbon */
     '#twsRibbon{position:fixed;right:0;top:50%;transform:translateY(-50%) translateX(100%);z-index:99997;transition:transform 0.4s cubic-bezier(0.4,0,0.2,1);}',
@@ -261,10 +196,10 @@ function injectStyles(){
 
     /* Mobile */
     '@media(max-width:480px){',
-    '#twsPop{padding:0;align-items:flex-end;}',
-    '#twsCard{max-width:100%;max-height:95vh;border-radius:10px 10px 0 0;}',
-    '#twsHead{border-radius:10px 10px 0 0;}',
-    '#twsBody{padding:18px 18px 20px;}',
+      '#twsPop{padding:0;}',
+      '#twsCard{max-width:100%;border-radius:0;min-height:100vh;display:flex;flex-direction:column;justify-content:center;}',
+      '#twsInner{padding:40px 24px 32px;}',
+      '#twsInner h2{font-size:26px;}',
     '}'
   ].join('');
   document.head.appendChild(s);
@@ -273,434 +208,130 @@ function injectStyles(){
 /* ── HTML ── */
 function injectHTML(){
   if(document.getElementById('twsPop')) return;
-  var w = document.createElement('div');
-  w.innerHTML = ''
-  +'<div id="twsPop">'
-    +'<div id="twsCard">'
-      +'<button id="twsClose" aria-label="Close">&#x2715;</button>'
-      +'<div id="twsHead">'
-        +'<div class="tws-eyebrow">Two Wild Souls Photography</div>'
-        +'<h2 class="tws-title">Show Me My <em>Timing</em></h2>'
-        +'<p class="tws-sub">Answer 5 quick questions and we\'ll reveal the perfect time for your maternity photos!</p>'
-      +'</div>'
-      +'<div id="twsProgBar"><div id="twsProgFill"></div></div>'
-      +'<div id="twsBody">'
-        +'<div id="twsDots"></div>'
+  var w=document.createElement('div');
+  w.innerHTML=
+    '<div id="twsPop">'
+    +  '<div id="twsCard">'
+    +    '<button id="twsClose" aria-label="Close">&#x2715;</button>'
+    +    '<div id="twsInner">'
 
-        /* Step 1 — Due date */
-        +'<div class="tws-step active" id="tws-s1">'
-          +'<p class="tws-q">When is your due date?</p>'
-          +'<p class="tws-hint">We\'ll calculate your ideal photo window from this.</p>'
+    +      '<div class="tws-eyebrow">'
+    +        '<div class="tws-eyebrow-line"></div>'
+    +        '<span>Two Wild Souls Photography</span>'
+    +        '<div class="tws-eyebrow-line"></div>'
+    +      '</div>'
 
-          /* Wrapper holds both the visible button and the hidden native input.
-             On mobile the input is triggered programmatically via .click(),
-             so the button remains the only visible UI element.             */
-          +'<div style="position:relative;">'
-            +'<button type="button" class="tws-dpbtn" id="twsDpBtn" onclick="twsToggleCal()">Tap to select your due date...</button>'
-            /* Hidden native date input — mobile only trigger target */
-            +'<input type="date" id="twsNativeDateInput" aria-hidden="true" tabindex="-1" />'
-          +'</div>'
+    +      '<div class="tws-spots"><div class="tws-spots-dot"></div><span>6 spots / month</span></div>'
 
-          +'<div id="twsWarnBox"><p class="twsWB-t">We\'re unable to accommodate that timing.</p><p class="twsWB-b">Based on your due date, you\'re at or beyond <strong>34 weeks</strong> — past our session window. We recommend booking between weeks 28–33.<br><br>Questions? <a href="https://twowildsoulsphotography.com/contact" target="_blank">Contact us directly.</a></p></div>'
-          +'<p class="tws-err" id="tws-e1">Please select a valid future due date.</p>'
-          +'<div class="tws-nav"><button class="tws-nxt" onclick="twsGo(1,2)">Continue &#x2192;</button></div>'
-        +'</div>'
+    +      '<div class="tws-consult-label">Personalized Maternity Consultation</div>'
 
-        /* Step 2 — First baby */
-        +'<div class="tws-step" id="tws-s2">'
-          +'<p class="tws-q">Is this your first baby?</p>'
-          +'<div class="tws-opts">'
-            +'<div class="tws-opt" onclick="twsPick(\'firstBaby\',\'yes\',this,2,3)"><div class="ot">Yes — first time!</div><div class="od">Exciting new chapter</div></div>'
-            +'<div class="tws-opt" onclick="twsPick(\'firstBaby\',\'no\',this,2,3)"><div class="ot">No — I\'ve done this before</div><div class="od">Adding to the family</div></div>'
-          +'</div>'
-          +'<p class="tws-err" id="tws-e2">Please make a selection to continue.</p>'
-          +'<div class="tws-nav"><button class="tws-back" onclick="twsGo(2,1)">&#x2190; Back</button></div>'
-        +'</div>'
+    +      '<h2>Find your <em>perfect</em><br>session window.</h2>'
 
-        /* Step 3 — Multiples */
-        +'<div class="tws-step" id="tws-s3">'
-          +'<p class="tws-q">Are you expecting multiples?</p>'
-          +'<div class="tws-opts">'
-            +'<div class="tws-opt" onclick="twsPick(\'multiples\',\'yes\',this,3,4)"><div class="ot">Yes — twins or more!</div></div>'
-            +'<div class="tws-opt" onclick="twsPick(\'multiples\',\'no\',this,3,4)"><div class="ot">No — just one</div></div>'
-          +'</div>'
-          +'<p class="tws-err" id="tws-e3">Please make a selection to continue.</p>'
-          +'<div class="tws-nav"><button class="tws-back" onclick="twsGo(3,2)">&#x2190; Back</button></div>'
-        +'</div>'
+    +      '<p class="tws-body">In <strong>20 seconds</strong> we\'ll build your custom recommendation — your ideal week range, booking urgency, and quote.</p>'
 
-        /* Step 4 — Style */
-        +'<div class="tws-step" id="tws-s4">'
-          +'<p class="tws-q">What look are you going for?</p>'
-          +'<div class="tws-opts">'
-            +'<div class="tws-opt" onclick="twsPick(\'style\',\'full\',this,4,5)"><div class="ot">Full, dramatic bump</div><div class="od">Classic maternity look — beautifully round</div></div>'
-            +'<div class="tws-opt" onclick="twsPick(\'style\',\'early\',this,4,5)"><div class="ot">Earlier &amp; more comfortable</div><div class="od">More energy, easier to move around</div></div>'
-          +'</div>'
-          +'<p class="tws-err" id="tws-e4">Please make a selection to continue.</p>'
-          +'<div class="tws-nav"><button class="tws-back" onclick="twsGo(4,3)">&#x2190; Back</button></div>'
-        +'</div>'
+    +      '<div class="tws-divider"></div>'
 
-        /* Step 5 — Who's joining */
-        +'<div class="tws-step" id="tws-s5">'
-          +'<p class="tws-q">Who\'s joining you for photos?</p>'
-          +'<p class="tws-hint">This helps us match you to the right experience.</p>'
-          +'<div class="tws-opts">'
-            +'<div class="tws-opt" onclick="twsPick(\'whoJoins\',\'momOnly\',this,5,0)"><div class="ot">Just me 🤍</div><div class="od">Intimate studio portraits — all about you and your bump</div></div>'
-            +'<div class="tws-opt" onclick="twsPick(\'whoJoins\',\'partner\',this,5,0)"><div class="ot">Me + my partner 💑</div><div class="od">Include your husband or partner in some or all shots</div></div>'
-            +'<div class="tws-opt" onclick="twsPick(\'whoJoins\',\'family\',this,5,0)"><div class="ot">The whole family 👨‍👩‍👧</div><div class="od">Partner, kids, fur babies — everyone welcome</div></div>'
-          +'</div>'
-          +'<p class="tws-err" id="tws-e5">Please make a selection to continue.</p>'
-          +'<div class="tws-nav"><button class="tws-back" onclick="twsGo(5,4)">&#x2190; Back</button></div>'
-        +'</div>'
+    +      '<div class="tws-pills">'
+    +        '<div class="tws-pill">Pro Hair + Makeup</div>'
+    +        '<div class="tws-pill">Designer Gowns</div>'
+    +        '<div class="tws-pill">In-Studio &amp; Outdoors</div>'
+    +      '</div>'
 
-        /* Loading */
-        +'<div id="twsLoad">'
-          +'<div class="tws-spinner"></div>'
-          +'<div class="tws-load-pkg" id="twsLoadPkg"></div>'
-          +'<div class="tws-load-tag" id="twsLoadTag"></div>'
-          +'<p class="tws-load-sub">Building your personalized quote…</p>'
-        +'</div>'
-      +'</div>'
-      +'<div id="twsFoot"><p>Two Wild Souls Photography &nbsp;·&nbsp; Metro Detroit &amp; Southeast Michigan</p></div>'
+    +      '<button id="twsStartBtn" onclick="twsLaunchQuiz()">'
+    +        '<span>Get My Instant Quote</span>'
+    +        '<span class="btn-arrow">&#x2192;</span>'
+    +      '</button>'
+
+    +      '<p class="tws-micro">Takes 20 seconds &nbsp;·&nbsp; No personal information required</p>'
+
+    +      '<div class="tws-social">'
+    +        '<div class="tws-stars"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></div>'
+    +        '<div class="tws-social-text"><strong>5.0</strong> &nbsp;·&nbsp; 67 Google reviews</div>'
+    +      '</div>'
+
+    +    '</div>'
+    +  '</div>'
     +'</div>'
-  +'</div>'
-  /* Desktop calendar overlay (unchanged) */
-  +'<div id="twsCal" onclick="twsCalOverlayClick(event)">'
-    +'<div id="twsCalBox">'
-      +'<div class="twsCal-head"><button type="button" onclick="twsCalMonth(-1)">&#8249;</button><span id="twsCalLbl"></span><button type="button" onclick="twsCalMonth(1)">&#8250;</button></div>'
-      +'<div class="twsCal-wdays"><div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div></div>'
-      +'<div class="twsCal-grid" id="twsCalGrid"></div>'
-      +'<div class="twsCal-foot"><button class="twsCal-cancel" type="button" onclick="twsCloseCal()">Cancel</button><button class="twsCal-done" type="button" onclick="twsConfirmCal()">Done</button></div>'
-    +'</div>'
-  +'</div>';
+    +'<div id="twsRibbon"><button onclick="twsRibbonOpen()" aria-label="Reopen timing calculator">Get Maternity Quote...</button></div>';
+
   while(w.firstChild) document.body.appendChild(w.firstChild);
-
   document.getElementById('twsClose').onclick = twsDismiss;
-  document.getElementById('twsPop').addEventListener('click', function(e){ if(e.target===this) twsDismiss(); });
-
-  /* ── Wire up native date input (mobile) ── */
-  var nativeInput = document.getElementById('twsNativeDateInput');
-  if(nativeInput){
-    /* Set min to ~8 weeks from today to mirror the custom calendar's minimum */
-    var minD = new Date(NOW.getTime() + 56*86400000);
-    nativeInput.min = minD.toISOString().split('T')[0];
-    /* When the user picks a date from the phone picker, commit it */
-    nativeInput.addEventListener('change', function(){
-      if(!this.value) return;
-      /* Parse YYYY-MM-DD safely (avoid UTC-offset midnight issues) */
-      var parts = this.value.split('-');
-      var picked = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
-      picked.setHours(0,0,0,0);
-      twsCommitDate(picked);
-    });
-  }
-
-  twsBuildDots(1);
-  twsUpdateProg(1);
+  document.getElementById('twsPop').addEventListener('click',function(e){ if(e.target===this) twsDismiss(); });
 }
 
-/* ── Shared date-commit logic (used by both pickers) ── */
-function twsCommitDate(dateObj){
-  ST.due    = dateObj;
-  ST.dueStr = dateObj.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
-  var btn   = document.getElementById('twsDpBtn');
-  if(btn){ btn.textContent = ST.dueStr; btn.classList.add('picked'); }
-  document.getElementById('tws-e1').classList.remove('show');
-  document.getElementById('twsWarnBox').classList.remove('show');
-  /* Auto-advance after a brief moment so the label update is visible */
-  setTimeout(function(){ twsGo(1,2); }, 300);
-}
-
-/* ── Dots & Progress ── */
-function twsBuildDots(n){
-  var c = document.getElementById('twsDots'); if(!c) return;
-  c.innerHTML = '';
-  for(var i=1;i<=5;i++){
-    var d=document.createElement('div');
-    d.className = 'tws-dot' + (i===n?' on':i<n?' done':'');
-    c.appendChild(d);
-  }
-}
-function twsUpdateProg(n){
-  var f = document.getElementById('twsProgFill'); if(!f) return;
-  f.style.width = (((n-1)/5)*100) + '%';
-  twsBuildDots(n);
-}
-
-/* ── Calendar toggle: routes to native (mobile) or custom (desktop) ── */
-window.twsToggleCal = function(){
-  if(isMobile()){
-    /* Trigger the hidden native date input */
-    var ni = document.getElementById('twsNativeDateInput');
-    if(ni){
-      /* Pre-fill with current selection so the phone picker opens at the right date */
-      if(ST.due){
-        var y = ST.due.getFullYear();
-        var m = String(ST.due.getMonth()+1).padStart(2,'0');
-        var d = String(ST.due.getDate()).padStart(2,'0');
-        ni.value = y+'-'+m+'-'+d;
-      }
-      ni.click();
-    }
-    return;
-  }
-  /* Desktop: open custom calendar (unchanged) */
-  var cal = document.getElementById('twsCal'); if(!cal) return;
-  if(cal.classList.contains('open')){ twsCloseCal(); return; }
-  if(ST.due){ calY=ST.due.getFullYear(); calM=ST.due.getMonth(); calTemp=new Date(ST.due); }
-  else{
-    var fd=new Date(NOW.getTime()+56*86400000); calY=fd.getFullYear(); calM=fd.getMonth(); calTemp=null;
-  }
-  twsRenderCal(); cal.classList.add('open');
-};
-window.twsCloseCal  = function(){ var c=document.getElementById('twsCal'); if(c) c.classList.remove('open'); };
-window.twsCalMonth  = function(d){ calM+=d; if(calM<0){calM=11;calY--;} if(calM>11){calM=0;calY++;} twsRenderCal(); };
-window.twsCalOverlayClick = function(e){ if(e.target===document.getElementById('twsCal')) twsCloseCal(); };
-window.twsConfirmCal = function(){
-  if(!calTemp){ twsCloseCal(); return; }
-  twsCloseCal();
-  twsCommitDate(new Date(calTemp));
-};
-function twsRenderCal(){
-  var lbl = document.getElementById('twsCalLbl'); if(!lbl) return;
-  lbl.textContent = MONTHS[calM]+' '+calY;
-  var grid = document.getElementById('twsCalGrid'); if(!grid) return;
-  grid.innerHTML = '';
-  var fd = new Date(calY,calM,1).getDay();
-  var dim = new Date(calY,calM+1,0).getDate();
-  var minDate = new Date(NOW.getTime()+56*86400000);
-  for(var i=0;i<fd;i++){ var e=document.createElement('button'); e.className='twsCal-day emp'; e.type='button'; grid.appendChild(e); }
-  for(var d=1;d<=dim;d++){
-    var dt=new Date(calY,calM,d); dt.setHours(0,0,0,0);
-    var b=document.createElement('button'); b.type='button'; b.className='twsCal-day'; b.textContent=d;
-    if(dt<minDate){ b.classList.add('dis'); }
-    else{
-      if(calTemp){ var t=new Date(calTemp); t.setHours(0,0,0,0); if(dt.getTime()===t.getTime()) b.classList.add('sel'); }
-      (function(x,btn2){ btn2.addEventListener('click',function(){
-        calTemp=new Date(x);
-        grid.querySelectorAll('.twsCal-day').forEach(function(bb){ bb.classList.remove('sel'); });
-        btn2.classList.add('sel');
-      }); })(dt,b);
-    }
-    grid.appendChild(b);
-  }
-}
-
-/* ── Navigation ── */
-window.twsGo = function(from, to){
-  if(to > from && !twsValidate(from)) return;
-  var fEl = document.getElementById('tws-s'+from);
-  var tEl = document.getElementById('tws-s'+to);
-  if(fEl) fEl.classList.remove('active');
-  if(tEl){ tEl.classList.add('active'); twsUpdateProg(to); }
+/* ── Launch — navigate full tab to quiz ── */
+window.twsLaunchQuiz = function(){
+  var urlParams = new URLSearchParams(window.location.search);
+  var dest      = QUIZ_URL;
+  var extras    = ['start=1'];
+  if(urlParams.get('fbclid')) extras.push('fbclid='+encodeURIComponent(urlParams.get('fbclid')));
+  if(urlParams.get('gclid'))  extras.push('gclid='+encodeURIComponent(urlParams.get('gclid')));
+  if(extras.length) dest += '?' + extras.join('&');
+  window.location.href = dest;
 };
 
-/* ── Validation ── */
-function twsValidate(s){
-  if(s===1){
-    var e=document.getElementById('tws-e1'), wb=document.getElementById('twsWarnBox');
-    if(!ST.due){ e.classList.add('show'); wb.classList.remove('show'); return false; }
-    e.classList.remove('show');
-    var wk = twsCurrentWeek(ST.due);
-    if(wk >= 34){ wb.classList.add('show'); return false; }
-    wb.classList.remove('show'); return true;
-  }
-  var map={2:['tws-e2','firstBaby'],3:['tws-e3','multiples'],4:['tws-e4','style'],5:['tws-e5','whoJoins']};
-  if(map[s]){
-    var err=document.getElementById(map[s][0]);
-    if(!ST[map[s][1]]){ err.classList.add('show'); return false; }
-    err.classList.remove('show');
-  }
-  return true;
-}
+/* ── Show / Dismiss ── */
+function twsShow(){ var p=document.getElementById('twsPop'); if(p) p.classList.add('open'); }
 
-/* ── Auto-advance picks ── */
-window.twsPick = function(key, val, el, fromStep, toStep){
-  var parent = el.closest ? el.closest('.tws-opts') : el.parentNode;
-  var siblings = parent.querySelectorAll('.tws-opt');
-  for(var i=0;i<siblings.length;i++) siblings[i].classList.remove('sel');
-  el.classList.add('sel'); ST[key] = val;
-  var err = document.getElementById('tws-e'+fromStep); if(err) err.classList.remove('show');
-  if(toStep === 0){
-    setTimeout(twsCalcResult, 280);
-  } else {
-    setTimeout(function(){ twsGo(fromStep, toStep); }, 280);
+window.twsDismiss = function(){
+  var p=document.getElementById('twsPop');
+  if(p){
+    p.style.transition='opacity 0.2s ease'; p.style.opacity='0';
+    setTimeout(function(){ p.classList.remove('open'); p.style.opacity=''; p.style.transition=''; showRibbon(); },200);
   }
+  setDismissed(); clearTimer();
 };
-
-/* ── Week helpers ── */
-function twsCurrentWeek(dueDate){
-  var conception = new Date(dueDate.getTime() - 280*86400000);
-  var daysSince = Math.floor((NOW - conception)/86400000);
-  return Math.max(1, Math.min(42, Math.ceil(daysSince/7)));
-}
-
-/* ── Calculate & redirect ── */
-function twsCalcResult(){
-  for(var i=1;i<=5;i++){
-    var s=document.getElementById('tws-s'+i); if(s) s.classList.remove('active');
-  }
-  var pkg = ST.whoJoins==='momOnly' ? 'portraits' : 'whiteGlove';
-  var p = PACKAGES[pkg];
-  document.getElementById('twsLoadPkg').textContent = p.emoji+' '+p.name;
-  document.getElementById('twsLoadTag').textContent = p.tagline;
-  document.getElementById('twsLoad').classList.add('active');
-  twsUpdateProg(5);
-
-  setTimeout(function(){
-    var due       = ST.due;
-    var isFirst   = ST.firstBaby === 'yes';
-    var multiples = ST.multiples === 'yes';
-    var style     = ST.style || 'full';
-    var setting   = ST.whoJoins === 'momOnly' ? 'indoor' : 'both';
-    var highRisk  = ST.highRisk;
-
-    var currentWeek = twsCurrentWeek(due);
-    var conception  = new Date(due.getTime() - 280*86400000);
-
-    var startWeek, endWeek;
-    if(multiples){
-      startWeek=24; endWeek=28;
-    } else if(!isFirst){
-      startWeek = style==='full'?28:26;
-      endWeek   = style==='full'?32:30;
-    } else {
-      startWeek = style==='full'?30:28;
-      endWeek   = style==='full'?34:32;
-    }
-
-    if(!multiples){
-      if(setting==='outdoor'){  startWeek=Math.max(20,startWeek-2); endWeek=Math.max(22,endWeek-2); }
-      else if(setting==='indoor'){ startWeek=Math.min(32,startWeek+1); endWeek=Math.min(34,endWeek+1); }
-    }
-    if(highRisk && !multiples){ startWeek=Math.max(20,startWeek-2); endWeek=Math.max(22,endWeek-2); }
-
-    endWeek   = Math.min(endWeek,   32);
-    startWeek = Math.min(startWeek, 32);
-
-    var isLate     = currentWeek >= 33;
-    var isUrgent   = currentWeek === 32;
-    var isInWindow = currentWeek >= startWeek && currentWeek <= endWeek && !isUrgent && !isLate;
-
-    var context = 'early';
-    if(isLate||isUrgent)          context='late';
-    else if(isInWindow)           context='inWindow';
-    else if(currentWeek>endWeek)  context='pastWindow';
-
-    var bookByStr = '';
-    if(!isLate && !isUrgent){
-      var bookDate = new Date(conception.getTime()+(startWeek*7-42)*86400000);
-      bookByStr = bookDate.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
-    } else if(isUrgent){
-      bookByStr = 'Today';
-    }
-
-    var maternityUrl = 'https://twowildsoulsphotography.com/personalized-maternity-results';
-    var newbornUrl   = 'https://twowildsoulsphotography.com/detroit-newborn-photographer-ads';
-    var dest = isLate ? newbornUrl : maternityUrl;
-
-    var params = new URLSearchParams({
-      week:    currentWeek,
-      status:  context,
-      window:  (isLate||isUrgent) ? '' : (startWeek+'-'+endWeek),
-      bookby:  bookByStr,
-      type:    isLate ? 'newborn' : 'maternity',
-      style:   style,
-      setting: setting,
-      package: pkg,
-      duedate: due.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})
-    });
-
-    var urlP = new URLSearchParams(window.location.search);
-    var fbclid=urlP.get('fbclid'), gclid=urlP.get('gclid');
-    if(fbclid) params.append('fbclid',fbclid);
-    if(gclid)  params.append('gclid',gclid);
-
-    try{ fbq('track','Lead',{content_name:'Calculator Complete',content_category:context,value:currentWeek,currency:'USD'}); }catch(e){}
-
-    window.location.href = dest + '?' + params.toString();
-  }, 1600);
-}
 
 /* ── Ribbon ── */
-function isExcludedPage(){
-  var u=window.location.href.toLowerCase();
-  for(var i=0;i<EXCLUDED.length;i++){ if(u.indexOf('/'+EXCLUDED[i])!==-1) return true; }
-  return false;
+function showRibbon(){
+  if(isExcludedPage()) return;
+  setRibbonActive();
+  var el=document.getElementById('twsRibbon');
+  if(!el){ injectRibbon(); el=document.getElementById('twsRibbon'); }
+  if(!el) return;
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){ el.classList.add('visible'); }); });
 }
+function hideRibbon(){ var r=document.getElementById('twsRibbon'); if(r) r.classList.remove('visible'); }
 function injectRibbon(){
   if(document.getElementById('twsRibbon')) return;
   var el=document.createElement('div'); el.id='twsRibbon';
   el.innerHTML='<button onclick="twsRibbonOpen()" aria-label="Reopen timing calculator">Get Maternity Quote...</button>';
   document.body.appendChild(el);
 }
-function showRibbon(){
-  if(isExcludedPage()) return;
-  setRibbonActive(); injectRibbon();
-  requestAnimationFrame(function(){ requestAnimationFrame(function(){
-    var r=document.getElementById('twsRibbon'); if(r) r.classList.add('visible');
-  }); });
-}
-function hideRibbon(){ var r=document.getElementById('twsRibbon'); if(r) r.classList.remove('visible'); }
-
-/* ── Reset quiz ── */
-function twsReset(){
-  ST = { due:null, dueStr:'', firstBaby:null, multiples:null, style:null, whoJoins:null, highRisk:false };
-  for(var i=1;i<=5;i++){ var s=document.getElementById('tws-s'+i); if(s) s.classList.remove('active'); }
-  var ld=document.getElementById('twsLoad'); if(ld) ld.classList.remove('active');
-  var s1=document.getElementById('tws-s1'); if(s1) s1.classList.add('active');
-  var btn=document.getElementById('twsDpBtn');
-  if(btn){ btn.textContent='Tap to select your due date...'; btn.classList.remove('picked'); }
-  /* Also clear native input value */
-  var ni=document.getElementById('twsNativeDateInput'); if(ni) ni.value='';
-  var wb=document.getElementById('twsWarnBox'); if(wb) wb.classList.remove('show');
-  twsUpdateProg(1);
-}
-
-/* ── Show / Dismiss ── */
-function twsShow(){ var p=document.getElementById('twsPop'); if(p) p.classList.add('open'); }
-window.twsDismiss = function(){
-  twsCloseCal();
-  var p=document.getElementById('twsPop');
-  if(p){ p.style.transition='opacity 0.2s ease'; p.style.opacity='0';
-    setTimeout(function(){ p.classList.remove('open'); p.style.opacity=''; p.style.transition=''; showRibbon(); },200); }
-  setDismissed(); clearTimer();
-};
 
 /* ── Manual triggers ── */
 window.twsOpen = function(){
   try{ localStorage.removeItem(DISMISS_KEY); }catch(e){}
   hideRibbon(); clearRibbonActive();
   if(!document.getElementById('twsPop')){ injectStyles(); injectHTML(); }
-  else twsReset();
   twsShow();
 };
 window.twsRibbonOpen = function(){
   hideRibbon(); clearRibbonActive();
   try{ localStorage.removeItem(DISMISS_KEY); }catch(e){}
   if(!document.getElementById('twsPop')){ injectStyles(); injectHTML(); }
-  else twsReset();
   twsShow();
 };
 
 /* ── Core init ── */
 function tryInit(){
-  var log=function(m){ console.log('[TWS Popup] '+m); };
+  var log=function(m){ console.log('[TWS Popup v6] '+m); };
 
   if(isRibbonActive()){
     if(isExcludedPage()){ log('Excluded — ribbon suppressed'); return; }
     log('Ribbon active — restoring tab');
-    injectStyles(); showRibbon(); return;
+    injectStyles(); injectRibbon(); showRibbon(); return;
   }
 
   if(isDismissed()){ log('Suppressed — dismissed within 7 days'); return; }
   if(isExcludedPage()){ log('Excluded page — popup blocked'); return; }
 
   if(isQualifyingMaternityPage()){ log('Qualifying page — flagging'); setFlag(); setTimerStart(); }
-  else { log('Not a qualifying page'); }
+  else{ log('Not a qualifying page'); }
 
   if(!isFlagged()){ log('Not flagged yet'); return; }
 
-  var elapsed=timeElapsed();
+  var elapsed  =timeElapsed();
   var remaining=TEST_MODE?0:Math.max(0,DELAY_MS-elapsed);
   log('Elapsed: '+Math.round(elapsed/1000)+'s, remaining: '+Math.round(remaining/1000)+'s');
 
@@ -720,11 +351,11 @@ function tryInit(){
 }
 
 if(document.readyState==='loading'){
-  document.addEventListener('DOMContentLoaded', tryInit);
+  document.addEventListener('DOMContentLoaded',tryInit);
 } else { tryInit(); }
 
-window.addEventListener('popstate', tryInit);
-window.addEventListener('hashchange', tryInit);
+window.addEventListener('popstate',tryInit);
+window.addEventListener('hashchange',tryInit);
 
 })();
 </script>
