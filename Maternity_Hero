@@ -1,11 +1,14 @@
 <!-- ═══════════════════════════════════════════════════════════════
-     TWO WILD SOULS — Combined Hero + Roadmap Embed  v8.3
-     Changes from v8.2:
-       1. Quiz trigger now navigates directly to
-          https://moments.twowildsoulsphotography.com/?start=1
-          (opens in new tab) instead of launching a modal.
-       2. Entire modal system removed (backdrop, iframe, CSS,
-          initModal function) — significant code reduction.
+     TWO WILD SOULS — Combined Hero + Roadmap Embed  v8.4
+     Changes from v8.3:
+       1. Default state (no quiz params) now leads with quiz CTA.
+          Hero headline/sub replaced with quiz-forward copy.
+          CTA button links directly to quiz (new tab).
+       2. Roadmap section hidden in default state — shown only
+          after quiz personalisation params are present.
+       3. Quiz card (tws-quiz-card) removed — hero handles it.
+       4. All personalised states (early, inWindow, pastWindow,
+          urgent, late, newborn) unchanged.
      ═══════════════════════════════════════════════════════════════ -->
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&family=DM+Sans:wght@300;400;500&display=swap');
@@ -119,6 +122,21 @@
 .tws-hero__cta.u-urgent:hover { background:#8b2008 !important; }
 .tws-hero__cta.is-newborn { background:#c94b4b !important; }
 .tws-hero__cta.is-newborn:hover { background:#a03838 !important; }
+
+/* Default quiz trust pills */
+.tws-hero__quiz-trust {
+  display:none;
+  justify-content:center; gap:20px; flex-wrap:wrap;
+  margin-top:12px;
+  animation: twsFade .55s .42s both;
+}
+.tws-hero__quiz-trust-pill {
+  font-size:9.5px; font-weight:400; color:var(--tws-muted);
+  display:flex; align-items:center; gap:6px;
+}
+.tws-hero__quiz-trust-pill::before {
+  content:'✓'; font-size:10px; color:var(--tws-sage); font-weight:600;
+}
 
 /* Package card CTA */
 .tws-hero__pkg {
@@ -363,70 +381,6 @@
 }
 .tws-road__pkg__arrow { font-size:20px; color:rgba(255,255,255,.7); flex-shrink:0; }
 
-/* ── Quiz CTA card ──────────────────────────────────────────────── */
-.tws-quiz-card {
-  display:none;
-  margin: 48px auto 0; max-width: 860px;
-  border: 1.5px solid var(--tws-border);
-  border-radius: 4px; overflow: hidden;
-  animation: twsFade .55s .4s both;
-}
-.tws-quiz-card__inner {
-  display: flex; align-items: center; gap: 32px;
-  padding: 32px 36px;
-  background: var(--tws-cream);
-}
-.tws-quiz-card__icon {
-  font-size: 36px; flex-shrink: 0; line-height: 1;
-  opacity: .85;
-}
-.tws-quiz-card__body { flex: 1; min-width: 0; }
-.tws-quiz-card__label {
-  font-size: 9px; font-weight: 500; letter-spacing: .28em; text-transform: uppercase;
-  color: var(--tws-gold); display: block; margin-bottom: 8px;
-}
-.tws-quiz-card__title {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: 22px; font-weight: 400; line-height: 1.25;
-  color: var(--tws-forest); margin: 0 0 8px;
-}
-.tws-quiz-card__title em { font-style: italic; color: var(--tws-sage); }
-.tws-quiz-card__desc {
-  font-size: 13px; font-weight: 300; line-height: 1.6;
-  color: var(--tws-muted); margin: 0;
-}
-.tws-quiz-card__cta {
-  flex-shrink: 0;
-  display: inline-block !important;
-  background: var(--tws-forest) !important;
-  color: #fff !important; -webkit-text-fill-color: #fff !important;
-  font-family: 'DM Sans', sans-serif !important;
-  font-size: 9px !important; font-weight: 500 !important;
-  letter-spacing: .22em !important; text-transform: uppercase !important;
-  padding: 14px 28px !important; border-radius: 2px !important;
-  white-space: nowrap;
-  transition: background .2s, transform .18s !important;
-  box-shadow: 0 4px 16px rgba(46,47,44,.18) !important;
-  text-decoration: none !important;
-}
-.tws-quiz-card__cta:hover {
-  background: var(--tws-green) !important;
-  transform: translateY(-1px) !important;
-}
-.tws-quiz-card__footer {
-  background: var(--tws-warm);
-  border-top: 1px solid var(--tws-border);
-  padding: 10px 36px;
-  display: flex; align-items: center; gap: 20px;
-}
-.tws-quiz-card__pill {
-  font-size: 9.5px; font-weight: 400; color: var(--tws-muted);
-  display: flex; align-items: center; gap: 6px;
-}
-.tws-quiz-card__pill::before {
-  content: '✓'; font-size: 10px; color: var(--tws-sage); font-weight: 600;
-}
-
 /* Included grid */
 .tws-road__includes {
   display:grid; grid-template-columns:repeat(4,1fr); gap:1px;
@@ -445,10 +399,7 @@
   .tws-road__exp { padding:20px 18px; }
   .tws-road__exp-body { font-size:16px; line-height:1.75; }
   .tws-road__includes { grid-template-columns:repeat(2,1fr); }
-  .tws-quiz-card__inner { flex-direction:column; gap:20px; padding:24px 20px; text-align:center; }
-  .tws-quiz-card__icon { font-size:28px; }
-  .tws-quiz-card__cta { width:100% !important; text-align:center !important; }
-  .tws-quiz-card__footer { padding:10px 20px; flex-wrap:wrap; gap:12px; justify-content:center; }
+  .tws-hero__quiz-trust { gap:12px; }
 }
 </style>
 
@@ -483,6 +434,12 @@
       </span>
       <span class="tws-hero__pkg__arrow">›</span>
     </a>
+    <!-- Quiz trust pills — shown only in default state -->
+    <div class="tws-hero__quiz-trust" id="tws-quiz-trust">
+      <span class="tws-hero__quiz-trust-pill">Takes about 20 seconds</span>
+      <span class="tws-hero__quiz-trust-pill">Personalized to your due date</span>
+      <span class="tws-hero__quiz-trust-pill">No personal information</span>
+    </div>
     <!-- Early opt-in card — shown for week < 14, maternity only -->
     <div id="tws-optin" class="tws-optin" style="display:none;">
       <a id="tws-optin-pill" href="#pricing" class="tws-optin__pricing-pill">
@@ -511,7 +468,7 @@
   </div>
 </div>
 
-<div class="tws-section-gap"></div>
+<div class="tws-section-gap" id="tws-section-gap"></div>
 
 <!-- ── ROADMAP ───────────────────────────────────────────────────── -->
 <div class="tws tws-road" id="tws-road">
@@ -543,32 +500,17 @@
       <span class="tws-road__inc-desc">Albums, wall portraits, and prints — designed and delivered for you</span>
     </div>
   </div>
-
-  <!-- Quiz CTA — shown only when no quiz params present -->
-  <div class="tws-quiz-card" id="tws-quiz-card">
-    <div class="tws-quiz-card__inner">
-      <span class="tws-quiz-card__icon">🗓️</span>
-      <div class="tws-quiz-card__body">
-        <span class="tws-quiz-card__label">Find Out Where You Stand</span>
-        <h3 class="tws-quiz-card__title">Answer 5 questions — we'll tell you exactly <em>how much time you have left</em></h3>
-        <p class="tws-quiz-card__desc">We'll calculate your ideal session window, show you what's still available, and build your personalized roadmap — all in about 20 seconds!</p>
-      </div>
-      <a class="tws-quiz-card__cta" href="https://moments.twowildsoulsphotography.com/?start=1" id="tws-quiz-trigger" target="_blank" rel="noopener">Find Out Now →</a>
-    </div>
-    <div class="tws-quiz-card__footer">
-      <span class="tws-quiz-card__pill">Takes about 20 seconds</span>
-      <span class="tws-quiz-card__pill">Personalized to your due date</span>
-      <span class="tws-quiz-card__pill">No personal information</span>
-    </div>
-  </div>
 </div>
 
 <script>
 !function(){
 
   /* ══════════════════════════════════════════════════════════════
-     v8.3 — modal removed; quiz CTA navigates directly to
-            https://moments.twowildsoulsphotography.com/?start=1
+     v8.4 — quiz-first default state
+       · Default hero now drives straight to quiz (new tab)
+       · Roadmap + section gap hidden when no params present
+       · Trust pills shown below CTA in default state only
+       · All personalised states unchanged from v8.3
      ══════════════════════════════════════════════════════════════ */
 
   /* ── Smooth scroll ──────────────────────────────────────────── */
@@ -607,7 +549,7 @@
     return 'late';
   }
 
-  /* ── STATUS VOCABULARY — used to sanitize the style field ────── */
+  /* ── STATUS VOCABULARY ──────────────────────────────────────── */
   var STATUS_WORDS = ['early','inWindow','pastWindow','urgent','late','newborn','default'];
 
   /* ── Decoder ────────────────────────────────────────────────── */
@@ -708,9 +650,9 @@
       var midWk   = (startWk + endWk) / 2;
       var due     = parseDate(duedate);
       if(due){
-        var MS         = 24*60*60*1000;
-        var conception = new Date(due.getTime() - 280*MS);
-        var midDate    = new Date(conception.getTime() + midWk * 7 * MS);
+        var MS         = 24*24*60*60*1000;
+        var conception = new Date(due.getTime() - 280*24*60*60*1000);
+        var midDate    = new Date(conception.getTime() + midWk * 7 * 24*60*60*1000);
         var midMs      = midDate.getTime();
         if(midMs >= BLACKOUT_START_MS && midMs <= BLACKOUT_END_MS){
           return { blackout: true };
@@ -781,15 +723,17 @@
         newborn:false,
         nudge:'If maternity doesn\'t come together, your newborn session will be just as magical.'
       },
+      /* ── v8.4: default state drives to quiz ── */
       'default':{
         ey:  'Maternity Photography · Metro Detroit',
-        hl:  'Your Window Is <em>Open Right Now</em>',
-        sub: 'We take 6 maternity sessions per month. The women who love their experience most are always the ones who reached out before their preferred dates were gone — first pick of timing, the full gown collection, and nothing left to figure out. Take the quiz below to see exactly where you stand.',
-        badge:'6 Sessions Per Month — Find Your Window',
+        hl:  'Find Out <em>Exactly</em> Where You Stand',
+        sub: 'Answer 5 questions — we\'ll calculate your ideal session window, show you what\'s still available, and tell you how much time you have left. Takes about 20 seconds.',
+        badge:'6 Sessions Per Month',
         uc:  'u-soft',
-        cta: 'See Investment Details & Reserve Your Date',
+        cta: 'Find Out Now →',
         ctaC:'',
-        newborn:false
+        newborn:false,
+        quizCta: true
       }
     },
     newborn:{
@@ -943,7 +887,7 @@
     return a;
   }
 
-  /* ── Opt-in data store (populated by render) ─────────────────── */
+  /* ── Opt-in data store ──────────────────────────────────────── */
   window._twsOptinData = {};
 
   /* ── Main render ─────────────────────────────────────────────── */
@@ -954,16 +898,21 @@
         wf=windowStr(duedate,winParam)||(winParam?'Weeks '+winParam:'Weeks 28\u201332'),
         bf=bookby&&bookby!=='Today'?'Book by '+bookby:'Coming Up';
 
+    /* ── v8.4: determine if this is a default (no personalisation) state ── */
+    var isDefault = (!status || status === 'default') && !week && !duedate && !q.package;
+
+    /* ── Show/hide roadmap and section gap based on personalisation ── */
+    var roadEl  = $id('tws-road');
+    var gapEl   = $id('tws-section-gap');
+    if(roadEl)  roadEl.style.display  = isDefault ? 'none' : '';
+    if(gapEl)   gapEl.style.display   = isDefault ? 'none' : '';
+
     /* --- HERO --- */
     var typeMap=HERO[type]||HERO.maternity;
     var u=typeMap[status]||typeMap['default'];
     var spotsInfo=(type!=='newborn')?getSpotsInfo(week,duedate,winParam):null;
 
-    /* ── v8.2: blackout_note guard ─────────────────────────────────
-       The quiz already routed this user to a valid May or August date.
-       Skip the blackout redirect, suppress spots bar, swap in bespoke
-       hero copy that names the actual intended session month.
-    ── */
+    /* ── blackout_note guard ── */
     var isBlackoutRouted = !!(q.blackout_note);
     var blackoutMonth    = '';
     if(isBlackoutRouted){
@@ -979,14 +928,14 @@
 
     var tier=spotsInfo?WEEK_TIERS[spotsInfo.spots]:null;
 
-    var isEarly=(status==='early'||status==='default');
-    var effectiveTier=(!isEarly&&tier)?tier:null;
+    var isEarly=(status==='early');
+    var effectiveTier=(!isEarly&&!isDefault&&tier)?tier:null;
 
     $id('tws-eyebrow').textContent  = effectiveTier?effectiveTier.ey:u.ey;
     $id('tws-headline').innerHTML   = (effectiveTier?effectiveTier.hl:u.hl).replace(/{w}/g,week||'').replace(/{win}/g,wf);
     $id('tws-sub').textContent      = (effectiveTier?effectiveTier.sub:u.sub).replace(/{w}/g,week||'').replace(/{win}/g,wf);
 
-    /* ── v8.2: override hero copy for blackout-routed users ── */
+    /* ── blackout override ── */
     if(isBlackoutRouted && blackoutMonth){
       $id('tws-eyebrow').textContent = 'Maternity Photography · Metro Detroit';
       $id('tws-headline').innerHTML  = '<em>' + blackoutMonth + '</em> Sessions — You\'re All Set';
@@ -998,7 +947,7 @@
     if(isBlackoutRouted){
       badgeText = blackoutMonth ? blackoutMonth + ' Availability — Limited Spots' : 'Limited Availability';
       badgeUc   = 'u-open';
-    } else if(isEarly){
+    } else if(isDefault || isEarly){
       badgeText = u.badge || 'Sessions Available';
       badgeUc   = u.uc || 'u-soft';
     } else {
@@ -1007,10 +956,11 @@
     }
     badgeEl.textContent=badgeText||'';
     badgeEl.className='tws-hero__badge '+badgeUc;
-    badgeEl.style.display=badgeText?'inline-block':'none';
+    /* Hide badge in default state — quiz CTA does all the work */
+    badgeEl.style.display=(isDefault||!badgeText)?'none':'inline-block';
 
-    /* Spots bar — suppress for early/default AND for blackout-routed users */
-    if(spotsInfo && !isEarly && !isBlackoutRouted){
+    /* Spots bar — hide for early/default/blackout-routed */
+    if(spotsInfo && !isEarly && !isDefault && !isBlackoutRouted){
       var spotsEl=$id('tws-spots'), countEl=$id('tws-spots-count'), pipsEl=$id('tws-pips');
       spotsEl.style.display='block';
       countEl.textContent=spotsInfo.label; countEl.className='tws-hero__spots-count '+spotsInfo.sc;
@@ -1023,17 +973,17 @@
       }
     }
 
-    if(bookby&&type!=='newborn'){
+    if(bookby&&type!=='newborn'&&!isDefault){
       var byEl=$id('tws-bookby'), isToday=(bookby==='Today');
       if(!isToday){var d=new Date(bookby),now=new Date();now.setHours(0,0,0,0);if(!isNaN(d)&&d<now)isToday=true;}
       byEl.innerHTML=isToday?'Confirm availability <strong>today</strong>':'Book by <strong>'+bookby+'</strong> to guarantee your date.';
       byEl.style.display='block';
     }
 
-    if(u.nudge){var nudgeEl=$id('tws-nudge');nudgeEl.textContent=u.nudge;nudgeEl.style.display='block';}
+    if(u.nudge&&!isDefault){var nudgeEl=$id('tws-nudge');nudgeEl.textContent=u.nudge;nudgeEl.style.display='block';}
 
     var pkgKey=q.package;
-    if(!pkgKey){
+    if(!pkgKey&&!isDefault){
       var st=(q.style||'').toLowerCase(), se=(q.setting||'').toLowerCase();
       if(st==='momonly'||st==='mom_only'||st==='solo'||st==='justmom'||st==='just_mom') pkgKey='portraits';
       else if(st==='full'||se==='both'||se==='outdoor'||se==='outdoors') pkgKey='whiteGlove';
@@ -1042,13 +992,32 @@
     try{pg=window.parent.location.pathname+window.parent.location.search;}catch(e){}
     pg=pg||window.location.pathname+window.location.search;
 
-    var ctaEl=$id('tws-cta'), pkgEl=$id('tws-pkg');
-    var optinEl=$id('tws-optin');
+    var ctaEl=$id('tws-cta'), pkgEl=$id('tws-pkg'), optinEl=$id('tws-optin');
+    var quizTrustEl=$id('tws-quiz-trust');
 
     var oldNb=$id('tws-hero-nb');if(oldNb)oldNb.parentNode.removeChild(oldNb);
 
     var weekNum=parseInt(week,10);
     var showOptin=!isNaN(weekNum)&&weekNum<14&&type!=='newborn';
+
+    /* ── v8.4: default state — quiz CTA only ── */
+    if(isDefault){
+      if(quizTrustEl) quizTrustEl.style.display='flex';
+      if(optinEl) optinEl.style.display='none';
+      pkgEl.style.display='none';
+      ctaEl.textContent='Find Out Now →';
+      ctaEl.className='tws-hero__cta';
+      ctaEl.href='https://moments.twowildsoulsphotography.com/?start=1';
+      ctaEl.setAttribute('target','_blank');
+      ctaEl.setAttribute('rel','noopener');
+      ctaEl.style.display='';
+      $id('tws-sub').style.display='';
+      return; /* nothing else to render when default */
+    }
+
+    /* ── All personalised states below ── */
+    if(quizTrustEl) quizTrustEl.style.display='none';
+    ctaEl.removeAttribute('target');
 
     if(showOptin){
       var optinBody = optinEl.querySelector('.tws-optin__body');
@@ -1158,7 +1127,7 @@
     var urgent=(status==='urgent'||status==='late'||status==='pastWindow'||type==='newborn');
     if(urgent) expEl.classList.add('warn'); else expEl.classList.remove('warn');
 
-    /* ── v8.2: override excerpt copy for blackout-routed users ── */
+    /* ── blackout override for excerpt ── */
     if(isBlackoutRouted && blackoutMonth){
       $id('tws-exp-label').textContent = blackoutMonth + ' Sessions — Reserve Before It Fills';
       $id('tws-exp-body').textContent  = 'We\'re fully booked in June and July, but ' + blackoutMonth + ' still has a few sessions available. Everything is included — pro hair and makeup, our full designer gown collection, fully guided from start to finish. Securing your date now guarantees first pick of what\'s left.';
@@ -1189,13 +1158,6 @@
       expEl.appendChild(pkgCard);
     } else {
       expEl.appendChild(makeCta('','See Investment Details & Reserve Your Date',pg+'#pricing'));
-    }
-
-    /* --- QUIZ CARD --- */
-    var quizCard=$id('tws-quiz-card');
-    if(quizCard){
-      var hasPersonalisation=(status&&status!=='default')||week||q.duedate||q.package;
-      quizCard.style.display=hasPersonalisation?'none':'block';
     }
   }
 
